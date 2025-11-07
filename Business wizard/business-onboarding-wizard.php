@@ -50,6 +50,7 @@ class Business_Onboarding_Wizard {
         require_once BIZ_WIZARD_PLUGIN_DIR . 'includes/class-companies-house-api.php';
         require_once BIZ_WIZARD_PLUGIN_DIR . 'includes/class-wizard-email.php';
         require_once BIZ_WIZARD_PLUGIN_DIR . 'includes/class-wizard-database.php';
+        require_once BIZ_WIZARD_PLUGIN_DIR . 'includes/class-wizard-pdf.php';
     }
     
     private function init_hooks() {

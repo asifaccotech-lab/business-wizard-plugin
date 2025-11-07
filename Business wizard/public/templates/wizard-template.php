@@ -163,47 +163,172 @@ $payment_methods = BIZ_WIZARD_Frontend::get_payment_methods();
             </div>
         </section>
 
-        <!-- Step 3: Fees -->
+        <!-- Step 3: Tax Return Services & Fee Calculation -->
         <section id="step-3" class="step-content">
             <div class="step-header">
-                <h1 class="step-title"><?php _e('Fee Calculation', 'business-wizard'); ?></h1>
-                <p class="step-subtitle"><?php _e('Review your fees based on your details', 'business-wizard'); ?></p>
+                <h1 class="step-title"><?php _e('Tax Return Services & Fee Calculation', 'business-wizard'); ?></h1>
+                <p class="step-subtitle"><?php _e('Select your service period and review fees', 'business-wizard'); ?></p>
             </div>
 
-            <div class="company-info-box" id="company-info-box" style="display: none;">
-                <svg class="company-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                    <line x1="9" y1="9" x2="15" y2="9"></line>
-                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                </svg>
-                <div class="company-info-content">
-                    <h3 class="company-info-title"><?php _e('Company Details Retrieved', 'business-wizard'); ?></h3>
-                    <p class="company-info-text" id="company-info-number"></p>
-                    <p class="company-info-text" id="company-info-name"></p>
-                    <p class="company-info-text" id="company-info-type"></p>
+            <!-- Company Summary Card (for non-sole traders) -->
+            <div class="company-summary-card" id="company-summary-card" style="display: none;">
+                <h3 class="summary-card-title"><?php _e('Company Summary', 'business-wizard'); ?></h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label"><?php _e('Company Number:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-company-number">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label"><?php _e('Director Name:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-director-name">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label"><?php _e('Last Accounts Made:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-year-end">—</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label"><?php _e('Next Accounts Due:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-next-due">—</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Tax Year Service Selection -->
             <div class="form-section">
-                <h2 class="section-title"><?php _e('Services', 'business-wizard'); ?></h2>
-                
-                <div class="service-option">
-                    <h3 class="service-name"><?php _e('Monthly Subscription', 'business-wizard'); ?></h3>
-                    <p class="service-description"><?php _e('Ongoing monthly bookkeeping and compliance service', 'business-wizard'); ?></p>
-                    
-                    <div class="fee-breakdown">
-                        <div class="fee-row">
-                            <span class="fee-label"><?php _e('Monthly fee (excl. VAT)', 'business-wizard'); ?></span>
-                            <span class="fee-amount" id="fee-base">£0.00</span>
+                <h2 class="section-title"><?php _e('Select Tax Return Service', 'business-wizard'); ?></h2>
+
+                <!-- Service Option 1: Full Year -->
+                <label class="service-radio-card">
+                    <input type="radio" name="service_type" value="full_year" checked>
+                    <div class="service-card-content">
+                        <div class="service-card-header">
+                            <span class="service-card-title"><?php _e('Full Year', 'business-wizard'); ?></span>
+                            <span class="service-card-price">£249.00</span>
                         </div>
-                        <div class="fee-row">
-                            <span class="fee-label"><?php _e('VAT (20%)', 'business-wizard'); ?></span>
-                            <span class="fee-amount" id="fee-vat">£0.00</span>
+                        <p class="service-card-description"><?php _e('Complete tax return for a full fiscal year', 'business-wizard'); ?></p>
+                    </div>
+                </label>
+                <div class="service-dropdown" id="full-year-dropdown" style="margin-top: 10px;">
+                    <label for="tax-year-select" class="form-label"><?php _e('Select Fiscal Year:', 'business-wizard'); ?></label>
+                    <select id="tax-year-select" class="form-input">
+                        <option value=""><?php _e('Select year...', 'business-wizard'); ?></option>
+                    </select>
+                </div>
+
+                <!-- Service Option 2: Partial Year -->
+                <label class="service-radio-card">
+                    <input type="radio" name="service_type" value="partial_year">
+                    <div class="service-card-content">
+                        <div class="service-card-header">
+                            <span class="service-card-title"><?php _e('Partial Year', 'business-wizard'); ?></span>
+                            <span class="service-card-price">£299.00</span>
                         </div>
-                        <div class="fee-row total">
-                            <span class="fee-label"><?php _e('Total Per Month', 'business-wizard'); ?></span>
-                            <span class="fee-amount" id="fee-total">£0.00</span>
+                        <p class="service-card-description"><?php _e('Tax return for a specific date range within the year', 'business-wizard'); ?></p>
+                    </div>
+                </label>
+                <div class="service-dropdown hidden" id="partial-year-dropdown" style="margin-top: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label for="from-month-select" class="form-label"><?php _e('From Month:', 'business-wizard'); ?></label>
+                            <select id="from-month-select" class="form-input">
+                                <option value=""><?php _e('Select month...', 'business-wizard'); ?></option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
                         </div>
+                        <div>
+                            <label for="to-month-select" class="form-label"><?php _e('To Month:', 'business-wizard'); ?></label>
+                            <select id="to-month-select" class="form-input">
+                                <option value=""><?php _e('Select month...', 'business-wizard'); ?></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Option 3: Single Month -->
+                <label class="service-radio-card">
+                    <input type="radio" name="service_type" value="single_month">
+                    <div class="service-card-content">
+                        <div class="service-card-header">
+                            <span class="service-card-title"><?php _e('Single Month', 'business-wizard'); ?></span>
+                            <span class="service-card-price">£99.00</span>
+                        </div>
+                        <p class="service-card-description"><?php _e('Tax return for one specific month only', 'business-wizard'); ?></p>
+                    </div>
+                </label>
+                <div class="service-dropdown hidden" id="single-month-dropdown" style="margin-top: 10px;">
+                    <label for="single-month-select" class="form-label"><?php _e('Select Month:', 'business-wizard'); ?></label>
+                    <select id="single-month-select" class="form-input">
+                        <option value=""><?php _e('Select month...', 'business-wizard'); ?></option>
+                        <option value="January">January</option>
+                        <option value="February">February</option>
+                        <option value="March">March</option>
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                        <option value="December">December</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dynamic Summary Card -->
+            <div class="service-summary-card hidden" id="service-summary-card">
+                <h3 class="summary-card-title"><?php _e('Service Summary', 'business-wizard'); ?></h3>
+                <div class="summary-details">
+                    <div class="summary-row">
+                        <span class="summary-label"><?php _e('Company:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-service-company">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><?php _e('Selected Period:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-service-period">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><?php _e('Base Fee:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-base-fee">£249.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><?php _e('Extra Fee:', 'business-wizard'); ?></span>
+                        <span class="summary-value" id="summary-extra-fee">£0.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span class="summary-label"><strong><?php _e('Total Fee:', 'business-wizard'); ?></strong></span>
+                        <span class="summary-value"><strong id="summary-total-fee">£249.00</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Subscription Fee (Original) -->
+            <div class="form-section">
+                <h2 class="section-title"><?php _e('Monthly Subscription', 'business-wizard'); ?></h2>
+
+                <div class="fee-breakdown">
+                    <div class="fee-row">
+                        <span class="fee-label"><?php _e('Monthly fee (excl. VAT)', 'business-wizard'); ?></span>
+                        <span class="fee-amount" id="fee-base">£0.00</span>
+                    </div>
+                    <div class="fee-row">
+                        <span class="fee-label"><?php _e('VAT (20%)', 'business-wizard'); ?></span>
+                        <span class="fee-amount" id="fee-vat">£0.00</span>
+                    </div>
+                    <div class="fee-row total">
+                        <span class="fee-label"><?php _e('Total Per Month', 'business-wizard'); ?></span>
+                        <span class="fee-amount" id="fee-total">£0.00</span>
                     </div>
                 </div>
             </div>
