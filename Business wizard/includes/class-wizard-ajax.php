@@ -89,8 +89,8 @@ class BIZ_WIZARD_Ajax {
         if (is_wp_error($results)) {
             wp_send_json_error(['message' => $results->get_error_message()]);
         }
-        
-        wp_send_json_success($results['items'] ?? []);
+
+        wp_send_json_success($results);
     }
     
     public function submit_wizard() {
