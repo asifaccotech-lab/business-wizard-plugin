@@ -96,11 +96,11 @@ class BIZ_WIZARD_Companies_House_API {
         // Check cache
         $cache_key = 'biz_wizard_company_details_' . $company_number;
         $cached = get_transient($cache_key);
-        
+
         if ($cached !== false) {
             return $cached;
         }
-        
+
         $data = self::request("/company/{$company_number}");
         if (is_wp_error($data)) {
             return $data;
@@ -111,13 +111,13 @@ class BIZ_WIZARD_Companies_House_API {
         $director = '';
         if (!is_wp_error($officers)) {
             foreach ($officers['items'] ?? [] as $person) {
-                if (($person['officer_role'] ?? '') === 'director') {
+                if (($person['officer_role'] ?? '') === 'director' && !empty($person['name'])) {
                     $director = $person['name'];
                     break;
                 }
             }
         }
-        
+
         $addr = '';
         if (isset($data['registered_office_address'])) {
             $parts = array_filter([
@@ -129,20 +129,69 @@ class BIZ_WIZARD_Companies_House_API {
             $addr = implode(', ', $parts);
         }
 
+        // Get accounts dates (ONLY from accounts section)
+        $year_end_raw = null;
+        $next_due_raw = null;
+
+        if (!empty($data['accounts'])) {
+            if (!empty($data['accounts']['last_accounts']['made_up_to'])) {
+                $year_end_raw = $data['accounts']['last_accounts']['made_up_to'];
+            }
+
+            if (!empty($data['accounts']['next_accounts']['due_on'])) {
+                $next_due_raw = $data['accounts']['next_accounts']['due_on'];
+            } elseif (!empty($data['accounts']['next_due'])) {
+                $next_due_raw = $data['accounts']['next_due'];
+            } elseif (!empty($data['accounts']['next_made_up_to'])) {
+                $next_due_raw = $data['accounts']['next_made_up_to'];
+            }
+        }
+
+        // Helper to format ISO date → "31 March 2025"
+        $formatCompanyDate = function($raw) {
+            if (empty($raw)) return 'Not available';
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+                try {
+                    $dt = new DateTime($raw);
+                    return $dt->format('j F Y');
+                } catch (Exception $e) {
+                    return $raw;
+                }
+            }
+            return $raw;
+        };
+
+        $year_end = $formatCompanyDate($year_end_raw);
+        $next_due = $formatCompanyDate($next_due_raw);
+
+        // Calculate pending tax years (Full Year dropdown)
+        $pending_years = [];
+        if (!empty($year_end_raw) && !empty($next_due_raw)) {
+            $last_year = (int) date('Y', strtotime($year_end_raw));
+            $next_year = (int) date('Y', strtotime($next_due_raw));
+
+            // Generate all missing UK tax years from last filing to next due
+            for ($y = $last_year + 1; $y <= $next_year; $y++) {
+                $prev = $y - 1;
+                $pending_years[] = $prev . '/' . substr($y, -2); // e.g. 2023/24
+            }
+        }
+
         $details = [
             'company_number' => $data['company_number'] ?? '',
             'company_name' => $data['company_name'] ?? '',
             'registered_address' => $addr,
             'company_type' => ucwords(str_replace('_', ' ', $data['type'] ?? '')),
             'director_name' => $director,
-            'year_end' => $data['accounts']['last_accounts']['made_up_to'] ?? '',
-            'next_filing_due' => $data['accounts']['next_due'] ?? '',
-            'incorporation_date' => $data['date_of_creation'] ?? ''
+            'year_end' => $year_end,
+            'next_filing_due' => $next_due,
+            'incorporation_date' => $data['date_of_creation'] ?? '',
+            'pending_tax_years' => $pending_years // for Full Year dropdown
         ];
-        
+
         // Cache for 24 hours
         set_transient($cache_key, $details, DAY_IN_SECONDS);
-        
+
         return $details;
     }
     

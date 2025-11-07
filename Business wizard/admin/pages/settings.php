@@ -31,19 +31,15 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general
     </h2>
     
     <form method="post" action="options.php">
-        <?php 
+        <?php
         if ($active_tab == 'general') {
             settings_fields('biz_wizard_general_settings');
-            do_settings_sections('biz_wizard_general_settings');
         } elseif ($active_tab == 'api') {
-            settings_fields('biz_wizard_api_settings'); 
-            do_settings_sections('biz_wizard_api_settings');
+            settings_fields('biz_wizard_api_settings');
         } elseif ($active_tab == 'email') {
             settings_fields('biz_wizard_email_settings');
-            do_settings_sections('biz_wizard_email_settings');
         } elseif ($active_tab == 'advanced') {
             settings_fields('biz_wizard_advanced_settings');
-            do_settings_sections('biz_wizard_advanced_settings');
         }
         ?>
         

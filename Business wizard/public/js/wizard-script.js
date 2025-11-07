@@ -338,17 +338,29 @@
         $('#companyName').val(details.company_name);
         $('#registeredAddress').val(details.registered_address);
         $('#companyType').val(details.company_type);
-        $('#incorporationDate').val(details.date_of_creation);
-        
+        $('#incorporationDate').val(details.incorporation_date || details.date_of_creation);
+
+        // Save company details to wizard state for Step 3
+        wizardState.companyNumber = details.company_number;
+        wizardState.companyName = details.company_name;
+        wizardState.registeredAddress = details.registered_address;
+        wizardState.companyType = details.company_type;
+        wizardState.directorName = details.director_name;
+        wizardState.yearEnd = details.year_end;
+        wizardState.nextFilingDue = details.next_filing_due;
+        wizardState.pendingTaxYears = details.pending_tax_years || [];
+
         $('#company-search-results').html(
             '<div class="success-message">✓ Company details loaded successfully</div>'
         );
-        
+
         // Scroll to company info
         $('#company-info-box').show();
         $('#company-info-number').text('Company Number: ' + details.company_number);
         $('#company-info-name').text('Company Name: ' + details.company_name);
         $('#company-info-type').text('Company Type: ' + details.company_type);
+
+        saveState();
     }
     
     function updateFees() {
@@ -452,26 +464,160 @@
     
     function renderStep(stepNumber) {
         console.log('[Wizard] Rendering step:', stepNumber);
-        
+
         $('.step-content').removeClass('active');
         $('#step-' + stepNumber).addClass('active');
-        
+
         // Update back button
         $('.btn-secondary[onclick="previousStep()"]').prop('disabled', stepNumber === 1);
-        
+
         // Populate data on step 3
         if (stepNumber === 3) {
             updateFees();
+            initStep3Services();
             if (wizardState.businessTypeName !== 'Sole Trader') {
                 $('#company-info-box').show();
             }
         }
-        
+
         // Reset signature placeholder on step 4
         if (stepNumber === 4) {
             if (!wizardState.signature) {
                 $('#signature-placeholder').show();
             }
+        }
+    }
+
+    // Initialize Step 3 Services (Tax Year Selection)
+    function initStep3Services() {
+        // Show company summary if available
+        if (wizardState.companyNumber && wizardState.businessTypeName !== 'Sole Trader') {
+            $('#company-summary-card').show();
+            $('#summary-company-number').text(wizardState.companyNumber || '—');
+            $('#summary-director-name').text(wizardState.directorName || '—');
+            $('#summary-year-end').text(wizardState.yearEnd || '—');
+            $('#summary-next-due').text(wizardState.nextFilingDue || '—');
+        }
+
+        // Populate tax year dropdown
+        if (wizardState.pendingTaxYears && wizardState.pendingTaxYears.length > 0) {
+            let options = '<option value="">Select year...</option>';
+            wizardState.pendingTaxYears.forEach(function(year) {
+                options += '<option value="' + year + '">' + year + '</option>';
+            });
+            $('#tax-year-select').html(options);
+        }
+
+        // Service type radio handlers
+        $('input[name="service_type"]').off('change').on('change', function() {
+            const serviceType = $(this).val();
+
+            // Hide all dropdowns
+            $('#full-year-dropdown').hide();
+            $('#partial-year-dropdown').addClass('hidden').hide();
+            $('#single-month-dropdown').addClass('hidden').hide();
+            $('#service-summary-card').addClass('hidden');
+
+            // Show relevant dropdown
+            if (serviceType === 'full_year') {
+                $('#full-year-dropdown').show();
+            } else if (serviceType === 'partial_year') {
+                $('#partial-year-dropdown').removeClass('hidden').show();
+                updateToMonthOptions();
+            } else if (serviceType === 'single_month') {
+                $('#single-month-dropdown').removeClass('hidden').show();
+            }
+        });
+
+        // Tax year selection
+        $('#tax-year-select').off('change').on('change', function() {
+            updateServiceSummary();
+        });
+
+        // From month selection (for partial year)
+        $('#from-month-select').off('change').on('change', function() {
+            updateToMonthOptions();
+            updateServiceSummary();
+        });
+
+        // To month selection
+        $('#to-month-select').off('change').on('change', function() {
+            updateServiceSummary();
+        });
+
+        // Single month selection
+        $('#single-month-select').off('change').on('change', function() {
+            updateServiceSummary();
+        });
+
+        // Trigger initial display
+        $('input[name="service_type"]:checked').trigger('change');
+    }
+
+    // Update "To Month" dropdown to only show months after "From Month"
+    function updateToMonthOptions() {
+        const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const fromMonth = $('#from-month-select').val();
+        const fromIndex = months.indexOf(fromMonth);
+
+        let options = '<option value="">Select month...</option>';
+
+        if (fromIndex >= 0) {
+            for (let i = fromIndex + 1; i < months.length; i++) {
+                options += '<option value="' + months[i] + '">' + months[i] + '</option>';
+            }
+        } else {
+            months.forEach(function(month) {
+                options += '<option value="' + month + '">' + month + '</option>';
+            });
+        }
+
+        $('#to-month-select').html(options);
+    }
+
+    // Update service summary card
+    function updateServiceSummary() {
+        const serviceType = $('input[name="service_type"]:checked').val();
+        let period = '';
+        let baseFee = 0;
+        let extraFee = 0;
+
+        if (serviceType === 'full_year') {
+            period = $('#tax-year-select').val();
+            baseFee = 249.00;
+            extraFee = 0;
+        } else if (serviceType === 'partial_year') {
+            const fromMonth = $('#from-month-select').val();
+            const toMonth = $('#to-month-select').val();
+            if (fromMonth && toMonth) {
+                period = fromMonth + ' → ' + toMonth;
+                baseFee = 299.00;
+                extraFee = 50.00; // Extra fee for partial year
+            }
+        } else if (serviceType === 'single_month') {
+            period = $('#single-month-select').val();
+            baseFee = 99.00;
+            extraFee = 0;
+        }
+
+        // Only show summary if a valid selection is made
+        if (period) {
+            $('#summary-service-company').text(wizardState.companyName || wizardState.fullName || '—');
+            $('#summary-service-period').text(period);
+            $('#summary-base-fee').text('£' + baseFee.toFixed(2));
+            $('#summary-extra-fee').text('£' + extraFee.toFixed(2));
+            $('#summary-total-fee').text('£' + (baseFee + extraFee).toFixed(2));
+            $('#service-summary-card').removeClass('hidden');
+
+            // Save to wizard state
+            wizardState.taxServiceType = serviceType;
+            wizardState.taxServicePeriod = period;
+            wizardState.taxServiceFee = baseFee + extraFee;
+            saveState();
         }
     }
     
@@ -629,7 +775,9 @@
             success: function(response) {
                 if (response.success) {
                     console.log('[Wizard] Submission successful');
+                    wizardState.submissionId = response.data.submission_id;
                     wizardState.currentStep = 6;
+                    saveState();
                     renderStep(6);
                     populateConfirmation(formData);
                     updateSidebar();
@@ -685,7 +833,12 @@
     
     // Download receipt
     window.downloadReceipt = function() {
-        alert('Receipt will be sent to your email. You can also download it from your confirmation email.');
+        if (wizardState.submissionId) {
+            const downloadUrl = bizWizard.ajaxurl + '?action=download_receipt&submission_id=' + wizardState.submissionId + '&nonce=' + bizWizard.nonce;
+            window.open(downloadUrl, '_blank');
+        } else {
+            alert('Receipt will be sent to your email shortly.');
+        }
     };
     
     // Go home

@@ -257,38 +257,6 @@ class BIZ_WIZARD_Admin {
     }
     
     public function render_settings() {
-        $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'general';
-        
-        if (isset($_POST['biz_wizard_settings_submit'])) {
-            check_admin_referer('biz_wizard_settings_' . $active_tab);
-            
-            switch ($active_tab) {
-                case 'general':
-                    update_option('biz_wizard_enabled', isset($_POST['biz_wizard_enabled']) ? '1' : '0');
-                    break;
-                    
-                case 'api':
-                    update_option('biz_wizard_companies_house_api', sanitize_text_field($_POST['biz_wizard_companies_house_api']));
-                    update_option('biz_wizard_api_timeout', absint($_POST['biz_wizard_api_timeout']));
-                    break;
-                    
-                case 'email':
-                    update_option('biz_wizard_admin_emails', sanitize_textarea_field($_POST['biz_wizard_admin_emails']));
-                    update_option('biz_wizard_user_email_subject', sanitize_text_field($_POST['biz_wizard_user_email_subject']));
-                    update_option('biz_wizard_admin_email_subject', sanitize_text_field($_POST['biz_wizard_admin_email_subject']));
-                    update_option('biz_wizard_email_enabled', isset($_POST['biz_wizard_email_enabled']) ? '1' : '0');
-                    break;
-                    
-                case 'advanced':
-                    update_option('biz_wizard_debug_mode', isset($_POST['biz_wizard_debug_mode']) ? '1' : '0');
-                    break;
-            }
-            
-            echo '<div class="notice notice-success"><p>' . __('Settings saved successfully.', 'business-wizard') . '</p></div>';
-        }
-        
-        $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'general';
-        
         include BIZ_WIZARD_PLUGIN_DIR . 'admin/pages/settings.php';
     }
     
