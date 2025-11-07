@@ -8,15 +8,15 @@ if (!defined('ABSPATH')) {
 }
 
 class BIZ_WIZARD_Companies_House_API {
-    
+
     private static $api_key;
-    private static $api_base_url = 'https://api.company-information.service.gov.uk';
+    private static $api_base_url = 'https://api.companieshouse.gov.uk';
     private static $timeout;
-    
+
     public function __construct() {
         $api_settings = get_option('biz_wizard_api_settings', array());
         self::$api_key = isset($api_settings['biz_wizard_companies_house_api']) ? $api_settings['biz_wizard_companies_house_api'] : '';
-        self::$timeout = isset($api_settings['biz_wizard_api_timeout']) ? $api_settings['biz_wizard_api_timeout'] : 10;
+        self::$timeout = isset($api_settings['biz_wizard_api_timeout']) ? $api_settings['biz_wizard_api_timeout'] : 15;
     }
     
     private static function request($endpoint) {

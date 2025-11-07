@@ -91,8 +91,8 @@ $api_key = isset($api_settings['biz_wizard_companies_house_api']) ? $api_setting
 ?>
                     <input type="text" id="biz_wizard_companies_house_api" name="biz_wizard_api_settings[biz_wizard_companies_house_api]" value="<?php echo esc_attr($api_key); ?>" class="regular-text">
                     <p class="description">
-                        <?php _e('Get your free API key from:', 'business-wizard'); ?> 
-                        <a href="https://developer.company-information.service.gov.uk/" target="_blank">https://developer.company-information.service.gov.uk/</a>
+                        <?php _e('Get your free API key from:', 'business-wizard'); ?>
+                        <a href="https://developer.companieshouse.gov.uk/" target="_blank">https://developer.companieshouse.gov.uk/</a>
                     </p>
                 </td>
             </tr>
